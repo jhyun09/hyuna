@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>통합 관리자 페이지</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      margin: 30px;
+      background: #f5f7fa;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    h1 {
+      text-align: center;
+      color: #0077cc;
+      margin-bottom: 30px;
+    }
+    .top-nav {
+      text-align: right;
+      margin-bottom: 20px;
+    }
+    .top-nav a {
+      margin-left: 15px;
+      text-decoration: none;
+      color: #0077cc;
+      font-weight: bold;
+    }
+    .section {
+      margin: 0 auto 50px auto;
+      max-width: 1100px;
+      background: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.08);
+    }
+    .section h2 {
+      margin-bottom: 20px;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    td.title {
+      text-align: left;
+      max-width: 400px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    td.content {
+      text-align: left;
+      max-width: 300px;
+      overflow: hidden;
+      white-space: pre-wrap;
+    }
+    form {
+      margin: 0;
+    }
+    button.delete-btn {
+      background-color: #d9534f;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button.delete-btn:hover {
+      background-color: #c9302c;
+    }
+    .filter-form {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .filter-form select {
+      padding: 6px 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-nav">
+    <a href="{{ url_for('home') }}">🏠 홈</a>
+    <a href="{{ url_for('auth.logout') }}">🔓 로그아웃</a>
+  </div>
+
+  <h1>🛠 통합 관리자 페이지</h1>
+
+  <div class="section">
+    <h2>게시글 관리</h2>
+
+    <form method="get" class="filter-form">
+      <label>게시판 필터:
+        <select name="category" onchange="this.form.submit()">
+          <option value="">전체 보기</option>
+          {% for cat in ['자유게시판', '이야기게시판', '사진게시판', '습작게시판', '쭈야랑게시판'] %}
+            <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </form>
+
+    {% if posts %}
+    <table>
+      <thead>
+        <tr>
+          <th>게시판</th>
+          <th>ID</th>
+          <th>제목</th>
+          <th>작성자</th>
+          <th>작성일</th>
+          <th>조회수</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for post in posts %}
+        <tr>
+          <td>{{ post.category }}</td>
+          <td>{{ post.id }}</td>
+          <td class="title" title="{{ post.title }}">{{ post.title }}</td>
+          <td>{{ post.author }}</td>
+          <td>{{ post.date }}</td>
+          <td>{{ post.read_count }}</td>
+          <td>
+            <form action="{{ url_for('post.delete', post_id=post.id) }}" method="POST" onsubmit="return confirm('정말 삭제하시겠습니까?');">
+              <button type="submit" class="delete-btn">삭제</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>등록된 게시글이 없습니다.</p>
+    {% endif %}
+  </div>
+
+  <div class="section">
+    <h2>댓글 관리</h2>
+    {% if comments %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>게시글 ID</th>
+          <th>작성자</th>
+          <th>내용</th>
+          <th>작성일</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comment in comments %}
+        <tr>
+          <td>{{ comment.id }}</td>
+          <td>{{ comment.post_id }}</td>
+          <td>{{ comment.author }}</td>
+          <td class="content">{{ comment.content }}</td>
+          <td>{{ comment.created_at }}</td>
+          <td>
+            <form action="{{ url_for('post.delete_comment', comment_id=comment.id) }}" method="POST" onsubmit="return confirm('정말 삭제하시겠습니까?');">
+              <button type="submit" class="delete-btn">삭제</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>등록된 댓글이 없습니다.</p>
+    {% endif %}
+  </div>
+
+</body>
+</html>

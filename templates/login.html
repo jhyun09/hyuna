@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>로그인</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans KR', sans-serif;
+      background-image: url('{{ url_for("static", filename="images/main1.jpg") }}');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: brightness(0.85);
+      color: white;
+    }
+
+    .login-box {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 2rem 3rem;
+      border-radius: 15px;
+      text-align: center;
+      width: 350px;
+    }
+
+    .login-box h2 {
+      margin-bottom: 1.5rem;
+    }
+
+    .login-box form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .login-box input[type="text"],
+    .login-box input[type="password"] {
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    .login-box button {
+      padding: 0.8rem;
+      background: white;
+      color: #333;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .login-box button:hover {
+      background: #ddd;
+    }
+
+    .message {
+      margin-top: 1rem;
+      color: #ffcccb;
+    }
+
+    .back-link {
+      margin-top: 1rem;
+      display: block;
+      color: #ccc;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>🔐 로그인</h2>
+    <form method="POST" action="{{ url_for('auth.login') }}">
+      <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+      <input type="text" name="username" placeholder="사용자명" required>
+      <input type="password" name="password" placeholder="비밀번호" required>
+      <button type="submit">로그인</button>
+    </form>
+
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="message">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- 메인페이지로 돌아가기 링크 -->
+    <a href="{{ url_for('home') }}" class="back-link">← 메인으로 돌아가기</a>
+  </div>
+</body>
+</html>

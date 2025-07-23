@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category }} 목록{% endblock %}
+
+{% block head_scripts %}
+<style>
+  .qa-list {
+    font-size: 14px;
+    border-top: 2px solid #ccc;
+  }
+
+  .qa-header,
+  .qa-item {
+    display: grid;
+    grid-template-columns: 60px 1fr 100px 100px 80px;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 8px;
+  }
+
+  .qa-header {
+    background: #f5f5f5;
+    font-weight: bold;
+    color: #444;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .qa-item {
+    border-bottom: 1px solid #e0e0e0;
+    text-decoration: none;
+    color: #222;
+    transition: background 0.2s;
+  }
+
+  .qa-item:hover {
+    background: #fafafa;
+  }
+
+  .qa-item .num {
+    text-align: center;
+    font-weight: bold;
+    color: #0077cc;
+  }
+
+  .qa-item .title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+
+  .qa-item .author,
+  .qa-item .date,
+  .qa-item .views {
+    text-align: center;
+    font-size: 13px;
+    color: #666;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+  }
+
+  .gallery-card {
+    display: block;
+    text-decoration: none;
+    color: #222;
+    border: 1px solid #ccc;
+    padding: 8px;
+    background: #fff;
+  }
+
+  .gallery-card img {
+    width: 100%;
+    height: 170px;
+    object-fit: cover;
+  }
+
+  .gallery-card .info {
+    margin-top: 8px;
+  }
+
+  .gallery-card .title {
+    font-size: 15px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gallery-card .meta {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .search-form {
+    margin-top: 20px;
+    text-align: left;
+  }
+
+  .search-form input {
+    width: 200px;  /* 👈 추가! 가로폭 줄이기 */
+    padding: 6px 10px;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    
+  }
+
+  .search-form button {
+    padding: 6px 10px;
+    margin-left: 8px;
+    font-size: 14px;
+    background-color: #0077cc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .search-form button:hover {
+    background-color: #005fa3;
+  }
+</style>
+{% endblock %}
+
+{% block body_class %}
+  {{ 'photo-background' if is_gallery_category else '' }}
+{% endblock %}
+
+{% block content %}
+  <div class="page-container">
+    <h2>{{ category }}</h2>
+
+    <div class="action-buttons">
+      <a href="{{ url_for('post.write') }}?category={{ category }}">✍ 글쓰기</a>
+    </div>
+
+    {% if category_objects[category].type == 'photo' %}
+      <div class="gallery-wrapper">
+        <div class="gallery-grid">
+          {% for post in posts.items %}
+            <a href="{{ url_for('post.detail', post_id=post.id) }}" class="gallery-card">
+              <img src="{{ post.first_img_src or '/static/images/default.jpg' }}" alt="thumb" onerror="this.style.opacity=0.2;">
+              <div class="info">
+                <strong class="title">{{ post.title }}</strong>
+                <div class="meta">
+                  <span>{{ post.author }}</span> ·
+                  <span>{{ post.date }}</span>
+                  {% if post.comments|length > 0 %}
+                    · <span>💬 {{ post.comments|length }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="qa-list">
+        <div class="qa-header">
+          <div class="num">번호</div>
+          <div class="title">제목</div>
+          <div class="author">글쓴이</div>
+          <div class="date">날짜</div>
+          <div class="views">조회</div>
+        </div>
+
+        {% for post in posts.items %}
+          <a href="{{ url_for('post.detail', post_id=post.id) }}" class="qa-item">
+            <div class="num">{{ posts.total - ((posts.page - 1) * posts.per_page) - loop.index0 }}</div>
+            <div class="title">
+              {{ post.title }}
+              {% if '<img' in post.content %} 📷{% endif %}
+              {% if post.file_path %} 📎{% endif %}
+              {% if post.comments|length > 0 %}
+                <span style="color:#888;">[{{ post.comments|length }}]</span>
+              {% endif %}
+            </div>
+            <div class="author">{{ post.author }}</div>
+            <div class="date">{{ post.date }}</div>
+            <div class="views">{{ post.read_count }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="search-form">
+      <form method="get">
+        <input type="text" name="q" value="{{ q }}" placeholder="제목/작성자 검색">
+        <button type="submit">검색</button>
+      </form>
+    </div>
+
+    <div style="margin-top: 20px; text-align: center;">
+     {% if posts.page > 1 %}
+       <a href="{{ url_for('post.index', category=category, page=1) }}">첫 페이지 ≪</a>
+     {% endif %}
+
+     {% for page_num in range(start_page, end_page + 1) %}
+       {% if page_num == posts.page %}
+         <strong style="margin: 0 6px;">{{ page_num }}</strong>
+       {% else %}
+         <a href="{{ url_for('post.index', category=category, page=page_num) }}" style="margin: 0 6px;">{{ page_num }}</a>
+       {% endif %}
+     {% endfor %}
+
+     {% if posts.page < posts.pages %}
+       <a href="{{ url_for('post.index', category=category, page=posts.pages) }}">≫ 끝 페이지</a>
+     {% endif %}
+   </div>
+  </div>
+{% endblock %}

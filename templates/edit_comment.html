@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}댓글 수정{% endblock %}
+
+{% block content %}
+  <div class="page-container">
+    <h2 style="margin-bottom: 1.2em;">💬 댓글 수정</h2>
+
+    <form method="post" class="comment-form">
+      <div class="form-group">
+        <label for="author">작성자</label>
+        <input type="text" id="author" name="author" value="{{ comment.author }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="content">내용</label>
+        <textarea id="content" name="content" rows="6" required>{{ comment.content }}</textarea>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button type="submit" class="primary-btn">✍ 수정 완료</button>
+        <a href="{{ url_for('post.detail', post_id=comment.post_id) }}" class="cancel-link">← 글로 돌아가기</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

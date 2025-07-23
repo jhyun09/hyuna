@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}게시판{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      font-family: "Malgun Gothic", sans-serif;
+      max-width: 900px;
+      margin: 30px auto;
+      line-height: 1.6;
+    }
+    nav {
+      background: #f2f2f2;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    nav a {
+      margin: 0 10px;
+      text-decoration: none;
+      color: #333;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌐 My Board</h1>
+
+  <nav>
+    <a href="{{ url_for('post.index', category='자유게시판') }}">📝 자유게시판</a> |
+    <a href="{{ url_for('post.index', category='이야기게시판') }}">📚 이야기게시판</a> |
+    <a href="{{ url_for('post.index', category='사진게시판') }}">📸 사진게시판</a>
+    <a href="{{ url_for('post.index', category='습작게시판') }}">📸 습작게시판</a>
+    <a href="{{ url_for('post.index', category='쭈야랑게시판') }}">📸 쭈야랑게시판</a>
+  </nav>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul class="flashes">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+</body>
+</html>

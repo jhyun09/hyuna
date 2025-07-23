@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Post Board of All</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans KR', sans-serif;
+      background-image: url('{{ url_for("static", filename="images/main1.jpg") }}');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      height: 100vh;
+      color: white;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      backdrop-filter: brightness(0.85);
+    }
+
+    header {
+      position: absolute;
+      top: 20px;
+      left: 40px;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .auth {
+      position: absolute;
+      top: 20px;
+      right: 40px;
+    }
+
+    .auth a {
+      color: white;
+      text-decoration: none;
+      margin-left: 1.2rem;
+      font-weight: bold;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 2rem;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+    }
+
+    .board-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .board-links a {
+      text-decoration: none;
+      padding: 0.8rem 1.6rem;
+      background: rgba(255, 255, 255, 0.85);
+      color: #333;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .board-links a:hover {
+      background: white;
+    }
+
+    .notice {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #fdd;
+      background-color: rgba(0,0,0,0.4);
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body class="main-background">
+  <p>관리자 여부: {{ session.get('is_admin') }}</p>
+  <a href="{{ url_for('static', filename='memorys/story1.htm') }}" target="_blank" class="link-white">🏠 추억</a>
+
+  <header>📋 Post Board of All</header>
+
+  <div class="auth">
+    {% if session.get('user_id') %}
+      <span>안녕하세요, {{ session.get('username') or '회원' }}님</span>
+      <a href="{{ url_for('auth.logout') }}">🔓 로그아웃</a>
+      {% if session.get('is_admin') %}
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="admin-btn" style="color: #f44; font-weight: bold; margin-left: 1rem;">🛠 관리자 페이지</a>
+      {% endif %}
+    {% else %}
+      <!-- 로그인하지 않은 경우 로그인 및 회원가입 버튼 표시 -->
+      <a href="{{ url_for('auth.login') }}">로그인</a>
+      <a href="{{ url_for('auth.signup') }}">회원가입</a>
+    {% endif %}
+  </div>
+
+  <h1>어서오세요, 당신의 이야기를 담아보세요 ✨</h1>
+
+  {% set icon_map = {
+    '자유게시판': '📝',
+    '이야기게시판': '📚',
+    '사진게시판': '📸',
+    '습작게시판': '🖋️',
+    '쭈야랑게시판': '💕',
+    '우리게시판': '🖋️',
+    '우리사진': '📸'
+  } %}
+
+  <!-- 🆕 새로 만든 게시판 먼저 표시 -->
+  {% if session.get('user_id') %}
+    <h2 style="margin-top: 3rem;">🆕 NEW 게시판</h2>
+    <div class="board-links">
+      {% for cat in custom_categories %}
+        <a href="{{ url_for('post.index', category=cat.name) }}">
+          <span class="emoji-badge">{{ icon_map.get(cat.name, '📸') }}</span> {{ cat.name }}
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="notice">🛑 게시판은 로그인 후 이용 가능합니다.</p>
+  {% endif %}
+
+  {% if session.get('user_id') and default_categories %}
+    <h2 style="margin-top: 3rem;">📂 옛날 복구 게시판</h2>
+    <div class="board-links">
+      {% for name in ['자유게시판', '이야기게시판', '사진게시판', '습작게시판', '쭈야랑게시판'] %}
+        {% for cat in default_categories if cat.name == name %}
+          <a href="{{ url_for('post.index', category=cat.name) }}">
+            <span class="emoji-badge">{{ icon_map.get(cat.name, '📌') }}</span> {{ cat.name }}
+          </a>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</body>
+</html>

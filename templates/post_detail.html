@@ -1,0 +1,15 @@
+<h1>{{ post.title }}</h1>
+
+<div class="post-content">
+  {{ post.content | safe }}
+</div>
+
+{% if 'bgm/' in post.content %}
+  {% set bgm_match = post.content | regex_search('bgm/([^"\']+\.mp3)') %}
+  {% if bgm_match %}
+    <audio id="bgm-player" controls preload="auto" style="margin-top: 1rem;">
+      <source src="/static/uploads/bgm/{{ bgm_match[1] }}" type="audio/mpeg">
+      브라우저에서 오디오를 지원하지 않습니다.
+    </audio>
+  {% endif %}
+{% endif %}

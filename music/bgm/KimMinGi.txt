@@ -1,0 +1,5 @@
+<object classid="clsid:66B30EA0-C033-4D4B-9F90-EA0AF07363AF" codebase="http://so.bugs.co.kr/BugsOggPlay_9.CAB#version=1,2,0,3" height="0" width="0">
+<param name="FileName" value="http://player.bugs.co.kr/player5/meta_enc.asp?music_idx=kor01208337,&mode=">
+<param name="PlayCount" value="0"></object>
+
+"Kim, Min-Gi With The Symphony Orchestra Of Russia" 중 프롤로그

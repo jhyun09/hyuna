@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}내 사이트{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  {% block head_scripts %}{% endblock %}
+
+  <style>
+    /* 🧭 공통 상단 헤더 */
+    .main-header {
+      background-color: #333;
+      color: white;
+      padding: 10px 20px;
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 999;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .main-header .header-left,
+    .main-header .header-center,
+    .main-header .header-right {
+      display: flex;
+      gap: 12px;
+      padding: 0 20px;
+    }
+
+    .main-header .header-center {
+      justify-content: center;
+      flex-grow: 1;
+    }
+
+    .main-header .header-right {
+      gap: 10px;
+      padding-right: 40px;
+    }
+
+    .main-header a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .main-header a:hover {
+      color: #00bfff;
+    }
+
+    /* 📦 본문 내용 박스 */
+    .page-container {
+      max-width: 900px;
+      margin: 100px auto 50px;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+  <!-- 🧭 공통 상단 헤더 -->
+  <div class="main-header">
+    <div class="header-left">
+      <a href="{{ url_for('home') }}">🏠 MAIN</a>
+    </div>
+    <div class="header-center">
+      <a href="{{ url_for('post.index', category='자유게시판', page=1) }}">📝 FREE</a>
+      <a href="{{ url_for('post.index', category='이야기게시판', page=1) }}">📖 STORYS</a>
+      <a href="{{ url_for('post.index', category='사진게시판', page=1) }}">📸 PHOTOS</a>
+      <a href="{{ url_for('post.index', category='습작게시판', page=1) }}">📸  ETUDE</a>
+      <a href="{{ url_for('post.index', category='쭈야랑게시판', page=1) }}">💕 JJUYA</a>
+      <span style="padding: 0 10px; font-weight: bold;">l</span>
+      <a href="{{ url_for('post.index', category='우리게시판', page=1) }}">🖋️N Free</a>
+      <a href="{{ url_for('post.index', category='우리사진', page=1) }}">📸N photos</a>
+    </div>
+    <div class="header-right">
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('auth.logout') }}">🚪 로그아웃</a>
+        {% if session.get('is_admin') %}
+          <a href="{{ url_for('admin.admin_dashboard') }}" style="color:#ffc107;">🛡 관리자페이지</a>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('auth.login', next=request.url) }}">🔐 로그인</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 📦 페이지 내용 -->
+  <div class="page-container">
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- 🧠 JS 초기화 블록 (CKEditor, 기타 스크립트) -->
+  {% block scripts %}{% endblock %}
+</body>
+</html>

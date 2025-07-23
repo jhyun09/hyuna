@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+{% block body_class %}{{ 'photo-background' if is_gallery_category else '' }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="post-title">{{ post.title }}</h2>
+  <div class="meta">
+    글쓴이: {{ post.author }} |
+    작성일: {{ post.date }} |
+    조회수: {{ post.read_count }}
+  </div>
+
+  <div class="content">
+  {{ post.content
+    | replace('<img', '<img class="zoomable" onclick="openZoomTab(this.src)"')
+    | safe }}
+  </div>
+
+  <button onclick="toggleHtml()" class="btn">🔍 HTML 보기</button>
+  <pre id="html-source" style="display:none;"></pre>
+
+  <form method="post" action="{{ url_for('post.delete', post_id=post.id) }}"
+        onsubmit="return confirm('정말 삭제할까요?');"
+        class="delete-form" style="display: flex; align-items: center; gap: 10px;">
+    <input type="password" name="password" placeholder="비밀번호 입력" required
+           style="width: 180px; padding: 6px 10px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc;">
+    <div class="btn-group" style="display: flex; gap: 8px;">
+      <button type="button"
+              onclick='location.href="{{ url_for("post.edit", post_id=post.id) }}"'
+              class="btn">✏️ 수정</button>
+      <button type="submit" class="btn btn-danger">🗑️ 삭제</button>
+    </div>
+  </form>
+
+  <a class="back-link" href="{{ url_for('post.index', category=post.category) }}">
+    ← {{ post.category }} 목록으로 돌아가기
+  </a>
+
+  <hr>
+
+  <h3>💬 댓글</h3>
+
+  {% if post.comments %}
+    {% for comment in post.comments %}
+      <div class="comment">
+        <strong>{{ comment.author }}</strong> |
+        <span class="comment-date">{{ comment.created_at }}</span>
+        <p>{{ comment.content | replace('\n', '<br>') | safe }}</p>
+        <div class="btn-group" style="display: inline-flex; gap: 8px; align-items: center;">
+          <form method="get" action="{{ url_for('post.edit_comment', comment_id=comment.id) }}">
+            <button type="submit" class="btn">✏️ 수정</button>
+          </form>
+          <form method="post" action="{{ url_for('post.delete_comment', comment_id=comment.id) }}"
+                onsubmit="return confirm('삭제할까요?');">
+            <button type="submit" class="btn btn-danger">🗑️ 삭제</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="comment-empty">💬 아직 댓글이 없습니다.</p>
+  {% endif %}
+
+  <div class="comment-form">
+    <h4>댓글 작성하기</h4>
+    <form method="post">
+      <label for="author">작성자</label>
+      <input type="text" name="author" placeholder="작성자" required>
+
+      <label for="content">내용</label>
+      <textarea name="content" rows="4" placeholder="댓글을 입력하세요" required></textarea>
+
+      <button type="submit" class="btn">댓글 등록</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .zoomable {
+    cursor: zoom-in;
+  }
+</style>
+
+<script>
+  function toggleHtml() {
+    const box = document.getElementById("html-source");
+    if (box.style.display === "none") {
+      if (!box.textContent) {
+        box.textContent = `{{ post.content
+          | replace("<", "&lt;")
+          | replace(">", "&gt;")
+          | replace('"', "&quot;")
+          | replace("'", "&#39;")
+        }}`;
+      }
+      box.style.display = "block";
+    } else {
+      box.style.display = "none";
+    }
+  }
+</script>
+
+<script>
+  function openZoomTab(src) {
+    const win = window.open('', '_blank', 'width=' + screen.width + ',height=' + screen.height + ',top=0,left=0');
+    if (!win) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>🔍 이미지 확대</title>
+          <style>
+            html, body {
+              margin: 0; padding: 0;
+              width: 100%; height: 100%;
+              background-color: #000;
+              overflow: hidden;
+              position: relative;
+            }
+            body {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              user-select: none;
+              cursor: zoom-in;
+            }
+            img {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              max-width: 100vw;
+              max-height: 100vh;
+              transform-origin: center center;
+              transform: translate(-50%, -50%) scale(1);
+              transition: transform 0.15s ease;
+              user-select: none;
+            }
+          </style>
+        </head>
+        <body>
+          <img id="zoom-img" src="${src}">
+          <script>
+            const img = document.getElementById('zoom-img');
+            let scale = 1;
+            let isDragging = false;
+            let startX, startY;
+            let currentTranslateX = 0;
+            let currentTranslateY = 0;
+
+            function updateTransform() {
+              img.style.transform = \`translate(calc(-50% + \${currentTranslateX}px), calc(-50% + \${currentTranslateY}px)) scale(\${scale})\`;
+            }
+
+            window.addEventListener('wheel', (e) => {
+              e.preventDefault();
+              const delta = e.deltaY < 0 ? 0.1 : -0.1;
+              scale = Math.min(Math.max(0.1, scale + delta), 5);
+
+              if (scale <= 1) {
+                // 원본크기 이하일 땐 위치 초기화 및 손커서 제거
+                currentTranslateX = 0;
+                currentTranslateY = 0;
+                img.style.cursor = 'zoom-in';
+              } else {
+                img.style.cursor = 'grab';
+              }
+
+              updateTransform();
+            }, { passive: false });
+
+            img.addEventListener('mousedown', (e) => {
+              if (scale <= 1) return; // 확대 상태에서만 드래그 가능
+              isDragging = true;
+              startX = e.clientX;
+              startY = e.clientY;
+              img.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+              if (!isDragging) return;
+              const dx = e.clientX - startX;
+              const dy = e.clientY - startY;
+              startX = e.clientX;
+              startY = e.clientY;
+              currentTranslateX += dx;
+              currentTranslateY += dy;
+              updateTransform();
+            });
+
+            window.addEventListener('mouseup', () => {
+              if (!isDragging) return;
+              isDragging = false;
+              img.style.cursor = 'grab';
+            });
+
+            img.addEventListener('dblclick', () => {
+              scale = 1;
+              currentTranslateX = 0;
+              currentTranslateY = 0;
+              img.style.cursor = 'zoom-in';
+              updateTransform();
+            });
+
+            window.addEventListener('keydown', (e) => {
+              if (e.key === 'Escape') window.close();
+            });
+          <\/script>
+        </body>
+      </html>
+    `;
+
+    win.document.write(html);
+    win.document.close();
+  }
+</script>
+{% endblock %}

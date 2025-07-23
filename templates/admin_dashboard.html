@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}🛡 관리자 페이지{% endblock %}
+
+{% block head_scripts %}
+<style>
+  h2, h3 { margin-top: 2rem; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+  }
+  th, td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: center;
+  }
+  th {
+    background-color: #f0f0f0;
+  }
+  a { text-decoration: none; color: #333; }
+  .btn-delete {
+    padding: 6px 12px;
+    background-color: #cc4444;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 2rem;
+  }
+  .btn-delete:hover {
+    background-color: #a33;
+  }
+  .back-link {
+    margin-top: 3rem;
+    display: inline-block;
+  }
+  .admin-actions {
+    margin-bottom: 1rem;
+  }
+  .admin-actions a {
+    margin-right: 1rem;
+    font-weight: bold;
+    color: #007bff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+  <h2>🛡 관리자 전용 페이지</h2>
+
+  <div class="admin-actions">
+    <a href="{{ url_for('admin.change_password') }}">🔑 비밀번호 변경</a>
+    <a href="{{ url_for('post.index', category='자유게시판', page=1) }}">📝 게시판 보기</a>
+    <a href="{{ url_for('home') }}">🏠 홈으로</a>
+  </div>
+
+  <!-- 📂 게시판 필터 -->
+  <form method="get" style="margin-bottom: 1rem;">
+    <label>📂 게시판 선택:</label>
+    <select name="category" onchange="this.form.submit()">
+      <option value="전체" {% if selected_category == '전체' %}selected{% endif %}>전체</option>
+      {% for cat in categories %}
+        <option value="{{ cat.name }}" {% if selected_category == cat.name %}selected{% endif %}>{{ cat.name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <h3>📂 {{ selected_category }} {% if selected_category != '전체' %}게시판{% endif %}</h3>
+
+  <!-- 📄 게시글 목록 -->
+  <form method="post" action="{{ url_for('post.bulk_delete') }}">
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" onclick="toggleAll(this, 'post_ids')"></th>
+          <th>ID</th>
+          <th>제목</th>
+          <th>작성자</th>
+          <th>작성일</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for post in posts %}
+        <tr>
+          <td><input type="checkbox" name="post_ids" value="{{ post.id }}" class="post_ids"></td>
+          <td>{{ post.id }}</td>
+          <td><a href="{{ url_for('post.detail', post_id=post.id) }}">{{ post.title }}</a></td>
+          <td>{{ post.author }}</td>
+          <td>{{ post.date }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">게시글이 없습니다.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button type="submit" class="btn-delete" onclick="return confirm('선택한 게시글을 삭제할까요?')">🗑️ 선택 삭제</button>
+  </form>
+
+  <hr>
+
+  <!-- 💬 댓글 관리 -->
+  <section>
+    <h3>💬 댓글 관리</h3>
+    <form method="post" action="{{ url_for('post.bulk_delete_comment') }}">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" onclick="toggleAll(this, 'comment_ids')"></th>
+            <th>ID</th>
+            <th>글ID</th>
+            <th>작성자</th>
+            <th>내용</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in comments %}
+          <tr>
+            <td><input type="checkbox" name="comment_ids" value="{{ c.id }}" class="comment_ids"></td>
+            <td>{{ c.id }}</td>
+            <td>{{ c.post_id }}</td>
+            <td>{{ c.author }}</td>
+            <td style="text-align:left;">{{ c.content[:40] }}{% if c.content|length > 40 %}...{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">댓글이 없습니다.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <button type="submit" class="btn-delete" onclick="return confirm('선택한 댓글을 삭제할까요?')">🗑️ 선택 삭제</button>
+    </form>
+  </section>
+
+  <br>
+  <a href="{{ url_for('post.index', category='자유게시판', page=1) }}" class="back-link">← 게시판으로 돌아가기</a>
+
+  <!-- ➕ 게시판 추가 -->
+  <h3>➕ 게시판 추가</h3>
+  <form method="post" action="{{ url_for('admin.add_category') }}">
+    <input type="text" name="category_name" placeholder="새 게시판 이름" required />
+    <select name="category_type" required>
+      <option value="text">일반 게시판</option>
+      <option value="photo">사진 게시판</option>
+    </select>
+    <button type="submit">추가</button>
+  </form>
+
+  <!-- ➖ 게시판 삭제 -->
+  <h3>➖ 게시판 삭제</h3>
+  <form method="post" action="{{ url_for('admin.delete_category') }}">
+    <select name="category_id" required>
+      {% for c in categories %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
+  </form>
+
+  <!-- 🛠 게시판 타입 수정 -->
+  <h3>🛠 게시판 타입 수정</h3>
+  <form method="post" action="{{ url_for('admin.edit_category') }}">
+    <select name="category_id" required>
+      {% for c in categories %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="category_type" required>
+      <option value="text">📝 일반</option>
+      <option value="photo">📷 사진</option>
+    </select>
+    <button type="submit">수정</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function toggleAll(source, className) {
+    const checkboxes = document.querySelectorAll('input.' + className);
+    checkboxes.forEach(cb => cb.checked = source.checked);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    let lastChecked = null;
+    document.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+      checkbox.addEventListener('click', function (e) {
+        const name = checkbox.className;
+        if (e.shiftKey && lastChecked && this !== lastChecked && this.className === lastChecked.className) {
+          const checkboxes = Array.from(document.querySelectorAll('input.' + name));
+          const start = checkboxes.indexOf(lastChecked);
+          const end = checkboxes.indexOf(this);
+          const [min, max] = [Math.min(start, end), Math.max(start, end)];
+          for (let i = min; i <= max; i++) {
+            checkboxes[i].checked = lastChecked.checked;
+          }
+        }
+        lastChecked = this;
+      });
+    });
+  });
+</script>
+{% endblock %}

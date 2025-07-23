@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category }}에 새 글 작성{% endblock %}
+
+{% block body_class %}{{ 'photo-background' if is_gallery_category else '' }}{% endblock %}
+
+{% block head_scripts %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="qa-write">
+    <h2>📌 {{ category }}에 새 글 작성</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+          {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST"
+          action="{{ url_for('post.write') }}?category={{ category }}"
+          enctype="multipart/form-data">
+
+      {{ form.csrf_token if form and form.csrf_token }}
+
+      <label for="title">제목</label>
+      <input type="text" name="title" id="title" required>
+
+      <label for="author">작성자</label>
+      <input type="text" name="author" id="author" required>
+
+      <label for="content">내용</label>
+      <textarea name="content" id="editor"></textarea>
+
+      <label for="image">이미지 첨부</label>
+      <input type="file" name="image" accept="image/*">
+
+      <button type="submit" class="btn">등록하기</button>
+    </form>
+
+    <div class="action-back">
+      <a href="{{ url_for('post.index', category=category, page=1) }}">← 목록으로 돌아가기</a>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    let editorInstance;
+
+    ClassicEditor
+      .create(document.querySelector('#editor'), {
+        ckfinder: {
+          uploadUrl: "{{ url_for('post.upload_image') }}"
+        }
+      })
+      .then(editor => {
+        editorInstance = editor;
+
+        const viewDocument = editor.editing.view.document;
+        viewDocument.on('change:isFocused', () => {
+          for (const viewElement of viewDocument.getRoot().getChildren()) {
+            if (viewElement.hasClass('ck-widget')) {
+              editor.editing.view.change(writer => {
+                writer.setStyle('display', 'inline-block', viewElement);
+                writer.setStyle('width', 'auto', viewElement);
+              });
+            }
+          }
+        });
+
+        editor.plugins.get('FileRepository').createUploadAdapter = (loader) => {
+          return {
+            upload: () => {
+              return new Promise((resolve, reject) => {
+                const data = new FormData();
+                loader.file.then(file => {
+                  data.append('upload', file);
+                  fetch("{{ url_for('post.upload_image') }}", {
+                    method: 'POST',
+                    body: data
+                  })
+                  .then(response => response.json())
+                  .then(result => {
+                    if (result.url) {
+                      resolve({ default: result.url });
+                    } else {
+                      reject(result.error?.message || '업로드 실패');
+                    }
+                  })
+                  .catch(() => reject('서버와 통신 오류'));
+                });
+              });
+            }
+          };
+        };
+
+        document.querySelector('form').addEventListener('submit', (e) => {
+          const content = editorInstance.getData().trim();
+          if (!content) {
+            alert("내용을 입력해주세요!");
+            e.preventDefault();
+            return;
+          }
+          document.querySelector('#editor').value = content;
+        });
+      })
+      .catch(error => console.error("🛑 CKEditor 초기화 실패:", error));
+  </script>
+{% endblock %}
