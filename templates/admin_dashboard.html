@@ -30,6 +30,16 @@
   .btn-delete:hover {
     background-color: #a33;
   }
+  .btn-approve {
+    padding: 6px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-approve:hover {
+    background-color: #45a049;
+  }
   .back-link {
     margin-top: 3rem;
     display: inline-block;
@@ -133,6 +143,86 @@
 
   <br>
   <a href="{{ url_for('post.index', category='자유게시판', page=1) }}" class="back-link">← 게시판으로 돌아가기</a>
+
+  <hr>
+
+  <!-- 📋 사용자 승인 관리 -->
+  <h3>📋 사용자 승인 관리</h3>
+  <form method="post" action="{{ url_for('admin.approve_user') }}">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>사용자명</th>
+          <th>가입일</th>
+          <th>승인</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in pending_users %}
+        <tr>
+          <td>{{ user.id }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.created_at }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin.approve_user', user_id=user.id) }}">
+              <button type="submit" class="btn-approve" onclick="return confirm('이 사용자를 승인하시겠습니까?')">승인</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4">승인 대기 중인 사용자가 없습니다.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
+  <hr>
+
+  <!-- 👤 회원 관리 -->
+  <section>
+    <h3>👤 회원 관리</h3>
+    <!-- 회원 검색 -->
+    <form method="get" action="{{ url_for('admin.manage_users') }}" style="margin-bottom: 1rem;">
+      <label>🔍 회원 검색:</label>
+      <input type="text" name="search" placeholder="회원명 또는 이메일" value="{{ search_query }}" />
+      <button type="submit">검색</button>
+    </form>
+
+    <!-- 회원 목록 테이블 -->
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>사용자명</th>
+          <th>이메일</th>
+          <th>가입일</th>
+          <th>수정</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.id }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.created_at }}</td>
+          <td><a href="{{ url_for('admin.edit_user', user_id=user.id) }}">✏️ 수정</a></td>
+          <td>
+            <form method="post" action="{{ url_for('admin.delete_user', user_id=user.id) }}">
+              <button type="submit" class="btn-delete" onclick="return confirm('이 회원을 삭제하시겠습니까?')">🗑️ 삭제</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">회원이 없습니다.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <hr>
 
   <!-- ➕ 게시판 추가 -->
   <h3>➕ 게시판 추가</h3>

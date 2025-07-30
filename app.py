@@ -5,12 +5,16 @@ from auth import auth_bp
 from admin import admin_bp
 from flask_migrate import Migrate
 from models import Category
+from flask_wtf import CSRFProtect 
+
+
 import re
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///board.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'my_secret_key'
+csrf = CSRFProtect(app)
 
 db.init_app(app)
 migrate = Migrate(app, db)

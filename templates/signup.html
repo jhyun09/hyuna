@@ -85,11 +85,13 @@
   <div class="signup-box">
     <h2>📝 회원가입</h2>
     <form method="POST" action="{{ url_for('auth.signup') }}">
-      <input type="text" name="username" placeholder="사용자명" required>
-      <input type="password" name="password" placeholder="비밀번호" required>
-      <input type="password" name="password_confirm" placeholder="비밀번호 확인" required>
-      <button type="submit">가입하기</button>
+       {{ form.hidden_tag() }}  <!-- CSRF 토큰 포함 -->
+       <input type="text" name="username" placeholder="사용자명" required>
+       <input type="password" name="password" placeholder="비밀번호" required>
+       <input type="password" name="confirm" placeholder="비밀번호 확인" required>
+       <button type="submit">가입하기</button>
     </form>
+
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}

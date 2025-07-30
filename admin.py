@@ -44,12 +44,16 @@ def admin_dashboard():
     post_ids = [p.id for p in posts]
     comments = Comment.query.filter(Comment.post_id.in_(post_ids)).order_by(Comment.id.desc()).all()
 
+    # ✅ 여기가 핵심!
+    pending_users = User.query.filter_by(is_active=False).order_by(User.created_at.desc()).all()
+
     return render_template(
         'admin_dashboard.html',
         posts=posts,
         comments=comments,
         categories=categories,
-        selected_category=selected_category
+        selected_category=selected_category,
+        pending_users=pending_users  # ✅ 추가!
     )
 
 # 비밀번호 변경
@@ -146,4 +150,34 @@ def edit_category():
         flash("해당 게시판이 존재하지 않습니다.")
 
     return redirect(url_for('admin.admin_dashboard'))
+
+# 승인 대기 중인 사용자 리스트
+@admin_bp.route('/users/pending')
+@admin_required
+@ip_restricted(['127.', '192.168.'])
+def pending_users():
+    users = User.query.filter_by(is_active=False).all()
+    return render_template('admin_pending_users.html', users=users)
+
+# 사용자 승인
+@admin_bp.route('/users/approve/<int:user_id>', methods=['POST'])
+@admin_required
+@ip_restricted(['127.', '192.168.'])
+def approve_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_active = True
+    db.session.commit()
+    flash(f"사용자 {user.username} 님이 승인되었습니다.")
+    return redirect(url_for('admin.pending_users'))
+
+# 사용자 삭제 (승인 거절)
+@admin_bp.route('/users/delete/<int:user_id>', methods=['POST'])
+@admin_required
+@ip_restricted(['127.', '192.168.'])
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    flash(f"사용자 {user.username} 님이 삭제되었습니다.")
+    return redirect(url_for('admin.pending_users'))
 

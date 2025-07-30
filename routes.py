@@ -155,38 +155,43 @@ def write():
     # ✅ 다크테마 전달
     return render_template("write.html", category=category, is_gallery_category=is_gallery_category)
 
-
-
-
 # 글 수정
 @post_bp.route("/edit/<int:post_id>", methods=["GET", "POST"])
 @login_required
 def edit(post_id):
     post = Post.query.get_or_404(post_id)
 
+    # 카테고리 정보 확인
     category_obj = Category.query.filter_by(name=post.category).first()
     is_gallery_category = category_obj.type == "photo" if category_obj else False
 
-    
     if request.method == "POST":
-        post.title = request.form["title"]
-        post.author = request.form["author"]
-        post.content = request.form["content"]
+        # 비밀번호 확인
+        password = request.form.get("password", "")
+        if post.check_password(password):
+            # 비밀번호 맞으면 수정 작업
+            post.title = request.form["title"]
+            post.author = request.form["author"]
+            post.content = request.form["content"]
 
-        image = request.files.get("image")
-        if image and image.filename:
-            filename = secure_filename(image.filename)
-            image_path = os.path.join("static", "uploads", filename)
-            try:
-                image.save(image_path)
-                post.content += f'<br><img src="/{image_path}" alt="첨부이미지">'
-            except Exception as e:
-                flash(f"이미지 업로드 실패: {str(e)}", "error")
-                return redirect(request.url)
+            # 이미지 업로드 처리
+            image = request.files.get("image")
+            if image and image.filename:
+                filename = secure_filename(image.filename)
+                image_path = os.path.join("static", "uploads", filename)
+                try:
+                    image.save(image_path)
+                    post.content += f'<br><img src="/{image_path}" alt="첨부이미지">'
+                except Exception as e:
+                    flash(f"이미지 업로드 실패: {str(e)}", "error")
+                    return redirect(request.url)
 
-        db.session.commit()
-        flash("글이 수정되었습니다.", "success")
-        return redirect(url_for("post.detail", post_id=post.id))
+            db.session.commit()
+            flash("글이 수정되었습니다.", "success")
+            return redirect(url_for("post.detail", post_id=post.id))
+        else:
+            flash("비밀번호가 틀렸습니다.", "error")
+            return redirect(url_for("post.edit", post_id=post.id))
 
     return render_template("edit.html", post=post, is_gallery_category=is_gallery_category)
 
@@ -195,15 +200,19 @@ def edit(post_id):
 @login_required
 def delete(post_id):
     post = Post.query.get_or_404(post_id)
-    pw = request.form.get("password", "")
-    real_pw = b64decode(post.password).decode() if hasattr(post, "password") else ""
+    password = request.form.get("password", "")
 
-    if pw != real_pw:
-        return "<script>alert('비밀번호가 틀렸습니다!');history.back();</script>"
+    # 비밀번호 확인
+    if post.check_password(password):
+        # 비밀번호가 맞으면 삭제 진행
+        db.session.delete(post)
+        db.session.commit()
+        flash("게시글이 삭제되었습니다.", "success")
+        return redirect(url_for("post.index", category=post.category, page=1))
+    else:
+        flash("비밀번호가 틀렸습니다.", "error")
+        return redirect(url_for("post.detail", post_id=post.id))
 
-    db.session.delete(post)
-    db.session.commit()
-    return redirect(url_for("post.index", category=post.category, page=1))
 
 # 댓글 수정
 @post_bp.route("/comment/edit/<int:comment_id>", methods=["GET", "POST"])
@@ -244,7 +253,7 @@ def bulk_delete():
         if post:
             db.session.delete(post)
     db.session.commit()
-    return redirect(url_for("admin.admin_dashboard"))
+    return redirect(url_for("post.admin"))
 
 # 이미지 업로드
 @post_bp.route('/upload-image', methods=['POST'])
@@ -267,6 +276,7 @@ def upload_image():
     except Exception as e:
         return jsonify({"error": {"message": str(e)}}), 500
 
+# 댓글 배치 삭제
 @post_bp.route("/comment/bulk-delete", methods=["POST"])
 @login_required
 def bulk_delete_comment():
@@ -277,4 +287,3 @@ def bulk_delete_comment():
             db.session.delete(comment)
     db.session.commit()
     return redirect(url_for("post.admin"))
-
