@@ -5,10 +5,12 @@ from auth import auth_bp
 from admin import admin_bp
 from flask_migrate import Migrate
 from models import Category
-from flask_wtf import CSRFProtect 
+from flask_wtf import CSRFProtect
+from logging import FileHandler, Formatter
 
 import os
 import re
+import logging
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///board.db'
@@ -47,14 +49,22 @@ def home():
                            default_categories=default_categories, 
                            custom_categories=custom_categories, 
                            gallery_categories=gallery_categories_obj)
+
 # 블루프린트 등록
 app.register_blueprint(admin_bp)
 app.register_blueprint(post_bp)
 app.register_blueprint(auth_bp)
 
+# 로깅 설정 (디버깅 모드가 아닐 때만 적용)
+if not app.debug:
+    file_handler = FileHandler('error.log')
+    file_handler.setLevel(logging.ERROR)
+    file_handler.setFormatter(Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    app.logger.addHandler(file_handler)
+
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()
+        db.create_all()  # 데이터베이스 생성 (마이그레이션을 사용하는 것이 좋음)
 
     port = int(os.environ.get("PORT", 10000))  # Render에서 포트 자동 할당
     app.run(host="0.0.0.0", port=port)
