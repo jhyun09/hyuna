@@ -7,7 +7,7 @@ from flask_migrate import Migrate
 from models import Category
 from flask_wtf import CSRFProtect 
 
-
+import os
 import re
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
